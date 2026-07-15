@@ -131,7 +131,7 @@ DRL-GA-Scheduler/
 │   ├── sun_wu_tpts.py         # TPTS 轨迹搜索基线
 │   ├── cuckoo_search.py       # HSCST 群体智能基线
 │   ├── zhu_replica.py         # GA_RG_HH 超启发式基线
-│   └── ifts.py                # Jiang-2024 两阶段基线
+│   └── ifts.py                # Xiang-2024 两阶段基线
 ├── dl_module/
 │   ├── dqn_agent.py           # DQN 智能体
 │   └── model.py               # Q 网络
@@ -147,7 +147,7 @@ DRL-GA-Scheduler/
 │   ├── plots/                 # 收敛图、箱线图和实际课表可视化
 │   └── diagnostics/           # 实例规模与资源压力诊断
 ├── main.py                    # 小规模连通性与消融变体测试入口
-├── run_experiment.py          # 论文 3.6.5 五算法正式对比实验
+├── run_experiment.py          # GA_RG_HH、Xiang-2024 及内部基线实验
 ├── run_ablation.py            # 消融实验
 ├── resume_ablation.py         # 消融实验恢复入口
 ├── run_cuckoo_all.py          # HSCST 独立批量实验
@@ -207,29 +207,35 @@ python main.py
 python run_param_analysis.py
 ```
 
-正式主流算法对比实验：
+GA_RG_HH、Xiang-2024 及内部基线实验：
 
 ```bash
 python run_experiment.py
 ```
 
-该入口对齐论文第 3.6.5 节和表 3.9，统一运行以下五种方法：
+`run_experiment.py` 中的对应关系如下：
 
-| 实验名称 | 代码实现 | 论文中的方法类型/终止条件 |
+| 脚本标识 | 论文对应方法 | 终止条件 |
 | --- | --- | --- |
-| `Ours` | 完整 Block + Repair + CDM + DQN + TS | 本文两阶段元启发式算法 |
-| `TPTS` | `SunWuTabuSearch` | 轨迹搜索，最大迭代 105000 |
-| `HSCST` | `CuckooSearchAlgorithm` | 群体智能混合，按对等计算强度设置 |
-| `GA_RG_HH` | `ZhuReplicaAlgorithm` | 超启发式，100 代、种群 20 |
-| `Jiang-2024` | `IFTS` | 图着色两阶段混合，200 代 |
+| `Zhu-Replica` | GA_RG_HH | 100 代、种群 20 |
+| `IFTS` | Xiang-2024 | GA 200 代后执行禁忌搜索 |
+| `DL-GA-TS`、`GA-DRL` 等 | 内部框架与组件对照 | 按实例配置和早停条件 |
 
-其中 TPTS 和 HSCST 也可以独立运行：
+TPTS、HSCST 分别通过独立入口运行：
 
 ```bash
 python export_cache.py
 python run_sunwu_all.py
 python run_cuckoo_all.py
 ```
+
+完整 Ours 不取自 `run_experiment.py` 中的 `DL-GA-TS`，而是取自消融实验最终变体：
+
+```text
+DL-GA-TS-Block-Repair-TrueCDM
+```
+
+该变体由 `run_ablation.py` 启用 Block、Repair、CDM、DQN 和禁忌搜索后产生。
 
 消融实验：
 
@@ -266,7 +272,7 @@ python run_weight_sensitivity.py --mode server --max-workers 8 --n-runs 5
 python run_time_budget.py
 ```
 
-当前时间预算入口比较 Ours、TPTS 与 HSCST，每种算法在 L1 上独立运行 20 次，并输出 30、60、120、300 秒的 anytime 检查点。标准终止条件下的五算法完整比较使用 `run_experiment.py`。
+当前时间预算入口比较完整 Ours、TPTS 与 HSCST，每种算法在 L1 上独立运行 20 次，并输出 30、60、120、300 秒的 anytime 检查点。GA_RG_HH 与 Xiang-2024 的标准终止条件实验由 `run_experiment.py` 产生。
 
 绘图脚本通过命令行接收实验 CSV 路径，不包含本机绝对路径。例如：
 

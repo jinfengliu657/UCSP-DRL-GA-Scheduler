@@ -101,8 +101,6 @@ from evaluation.fitness import FitnessEvaluator
 from algorithms.genetic_algorithm import GeneticAlgorithm
 from algorithms.zhu_replica import ZhuReplicaAlgorithm
 from algorithms.ifts import IFTS
-from algorithms.cuckoo_search import CuckooSearchAlgorithm
-from algorithms.sun_wu_tpts import SunWuTabuSearch
 
 # === 全局配置 ===
 N_RUNS = 10
@@ -252,19 +250,35 @@ def main():
             'metric_interval': 50, 'elite_count': 2, 'patience': cfg['patience'], 'population_size': cfg['pop']
         }
 
-        # 对齐论文第 3.6.5 节及表 3.9：Ours + 四种主流对比方法。
         algorithms = {
-            'Ours': {
+            'DL-GA-TS': {
                 'use_heuristic_init': True, 'use_rl_adaptive': True, 'use_tabu': True,
-                'use_block_operators': True, 'use_repair': True, 'use_cdm': True,
                 'crossover_rate': best_params['crossover_rate'],
                 'mutation_rate': best_params['mutation_rate'],
                 'tabu_steps': 10, **common_flags
             },
-            'TPTS': {},
-            'HSCST': {},
-            'GA_RG_HH': {},
-            'Jiang-2024': {},
+            'IFTS': {},
+            'Zhu-Replica': {},
+            'GA-DRL': {
+                'use_heuristic_init': True, 'use_rl_adaptive': True, 'use_tabu': False,
+                'crossover_rate': best_params['crossover_rate'],
+                'mutation_rate': best_params['mutation_rate'], **common_flags
+            },
+            'Standard-GA': {
+                'use_heuristic_init': False, 'use_rl_adaptive': False, 'use_tabu': False,
+                'crossover_rate': best_params['crossover_rate'],
+                'mutation_rate': best_params['mutation_rate'], **common_flags
+            },
+            'Heuristic-GA': {
+                'use_heuristic_init': True, 'use_rl_adaptive': False, 'use_tabu': False,
+                'crossover_rate': best_params['crossover_rate'],
+                'mutation_rate': best_params['mutation_rate'], **common_flags
+            },
+            'Heuristic-TS': {
+                'use_heuristic_init': True, 'use_tabu': True, 'use_rl_adaptive': False,
+                'crossover_rate': 0.0, 'mutation_rate': 0.0,
+                'tabu_steps': 10, **common_flags
+            }
         }
 
         instance_excel_data = []
@@ -283,36 +297,15 @@ def main():
                 final_gen = 0
 
                 try:
-                    if algo_name == 'GA_RG_HH':
+                    if algo_name == 'Zhu-Replica':
                         algo = ZhuReplicaAlgorithm(data, evaluator)
                         best_ind, history, rl_logs = algo.run(generations=100)
                         final_gen = 100
 
-                    elif algo_name == 'Jiang-2024':
+                    elif algo_name == 'IFTS':
                         algo = IFTS(data, evaluator)
                         best_ind, history, rl_logs = algo.run(generations=200)
                         final_gen = 200
-
-                    elif algo_name == 'HSCST':
-                        algo = CuckooSearchAlgorithm(data, evaluator)
-                        best_ind, final_gen, _, trace = algo.run(generations=10000, pop_size=50)
-                        history = [
-                            {'gen': i, 'best_fit': fit, 'avg_fit': 0.0, 'violations': 0, 'time_s': elapsed}
-                            for i, (elapsed, fit) in enumerate(trace)
-                        ]
-
-                    elif algo_name == 'TPTS':
-                        algo = SunWuTabuSearch(data, evaluator)
-                        best_ind, final_gen, _, trace = algo.run_with_time_limit(
-                            max_generations=105000,
-                            pop_size=1,
-                            time_limit=float('inf'),
-                            algo_name='TPTS',
-                        )
-                        history = [
-                            {'gen': i, 'best_fit': fit, 'avg_fit': 0.0, 'violations': 0, 'time_s': elapsed}
-                            for i, (elapsed, fit) in enumerate(trace)
-                        ]
 
                     else:
                         ga = GeneticAlgorithm(data, evaluator, flags)
