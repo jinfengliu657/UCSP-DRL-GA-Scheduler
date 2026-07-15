@@ -24,6 +24,10 @@ Thumbs.db
 # Runtime outputs
 results/
 data/cache/
+paper_plots/
+instance_*stats.csv
+instance_*diagnosis*.csv
+teacher_mismatch_details.csv
 *.log
 *.pth
 *.pt

@@ -132,6 +132,10 @@ class GeneticAlgorithm:
         self._eval_population()
         self.best_chromosome = max(self.population, key=lambda x: x.fitness)
 
+        # 关键修复：每次独立 run 开始前重置 RL episode 状态，防止跨 run 串扰
+        if self.use_rl and self.rl_controller:
+            self.rl_controller.reset_episode()
+
         soft_init, _, raw_init = self._calc_soft_score_safe(self.best_chromosome.genes)
         self.best_stats['avg_fitness'] = np.mean([c.fitness for c in self.population])
         self.best_stats['soft_score_sum'] = soft_init

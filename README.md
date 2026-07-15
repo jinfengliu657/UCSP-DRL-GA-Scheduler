@@ -127,7 +127,11 @@ DRL-GA-Scheduler/
 │   ├── combined_cdm.py        # 冲突定向变异
 │   ├── combined_repair.py     # 合班一致性修复
 │   ├── combined_tabu.py       # 授课单元级禁忌搜索
-│   └── rl_controller.py       # DQN 与遗传算法的控制接口
+│   ├── rl_controller.py       # DQN 与遗传算法的控制接口
+│   ├── sun_wu_tpts.py         # TPTS 轨迹搜索基线
+│   ├── cuckoo_search.py       # HSCST 群体智能基线
+│   ├── zhu_replica.py         # GA_RG_HH 超启发式基线
+│   └── ifts.py                # Jiang-2024 两阶段基线
 ├── dl_module/
 │   ├── dqn_agent.py           # DQN 智能体
 │   └── model.py               # Q 网络
@@ -139,13 +143,18 @@ DRL-GA-Scheduler/
 │   └── database.py            # MySQL 访问封装
 ├── models/chromosome.py       # 染色体表示
 ├── config/                    # 系统与约束配置
-├── scripts/plots/             # 论文实验绘图脚本
+├── scripts/
+│   ├── plots/                 # 收敛图、箱线图和实际课表可视化
+│   └── diagnostics/           # 实例规模与资源压力诊断
 ├── main.py                    # 小规模连通性与消融变体测试入口
-├── run_experiment.py          # 正式对比实验
+├── run_experiment.py          # 论文 3.6.5 五算法正式对比实验
 ├── run_ablation.py            # 消融实验
+├── resume_ablation.py         # 消融实验恢复入口
+├── run_cuckoo_all.py          # HSCST 独立批量实验
+├── run_sunwu_all.py           # TPTS 独立批量实验
 ├── run_param_analysis.py      # 参数分析
-├── run_sensitivity.py         # 权重灵敏性分析
-├── run_time_budget.py         # 时间预算实验
+├── run_weight_sensitivity.py  # 论文 3.6.7 正式权重灵敏性实验
+├── run_time_budget.py         # 300 秒时间预算对比实验
 └── test3.sql                  # 示例数据库结构与数据
 ```
 
@@ -198,10 +207,28 @@ python main.py
 python run_param_analysis.py
 ```
 
-正式对比实验：
+正式主流算法对比实验：
 
 ```bash
 python run_experiment.py
+```
+
+该入口对齐论文第 3.6.5 节和表 3.9，统一运行以下五种方法：
+
+| 实验名称 | 代码实现 | 论文中的方法类型/终止条件 |
+| --- | --- | --- |
+| `Ours` | 完整 Block + Repair + CDM + DQN + TS | 本文两阶段元启发式算法 |
+| `TPTS` | `SunWuTabuSearch` | 轨迹搜索，最大迭代 105000 |
+| `HSCST` | `CuckooSearchAlgorithm` | 群体智能混合，按对等计算强度设置 |
+| `GA_RG_HH` | `ZhuReplicaAlgorithm` | 超启发式，100 代、种群 20 |
+| `Jiang-2024` | `IFTS` | 图着色两阶段混合，200 代 |
+
+其中 TPTS 和 HSCST 也可以独立运行：
+
+```bash
+python export_cache.py
+python run_sunwu_all.py
+python run_cuckoo_all.py
 ```
 
 消融实验：
@@ -210,12 +237,36 @@ python run_experiment.py
 python run_ablation.py
 ```
 
-权重灵敏性与时间预算实验：
+论文第 3.6.7 节权重灵敏性实验：
 
 ```bash
-python run_sensitivity.py
+python run_weight_sensitivity.py --mode local --n-runs 5
+```
+
+服务器并行运行：
+
+```bash
+python run_weight_sensitivity.py --mode server --max-workers 8 --n-runs 5
+```
+
+脚本固定使用论文中的六组权重 B0–B5，在 8 个实例上分别运行。正式运行前需要通过 `export_cache.py` 生成 `data/cache/*_cache.pkl`。
+
+| 方案 | `(daily, interval, room, util, build)` | 侧重点 |
+| --- | --- | --- |
+| B0_Base | `(0.20, 0.20, 0.10, 0.30, 0.20)` | 基准均衡配置 |
+| B1_Daily | `(0.30, 0.15, 0.10, 0.25, 0.20)` | 日分布均衡 |
+| B2_Interval | `(0.15, 0.30, 0.10, 0.25, 0.20)` | 同课时间间隔 |
+| B3_Room | `(0.15, 0.15, 0.25, 0.25, 0.20)` | 同室一致性 |
+| B4_Util | `(0.15, 0.15, 0.10, 0.40, 0.20)` | 教室容量匹配 |
+| B5_Build | `(0.15, 0.15, 0.10, 0.25, 0.35)` | 教学楼集中性 |
+
+300 秒时间预算实验：
+
+```bash
 python run_time_budget.py
 ```
+
+当前时间预算入口比较 Ours、TPTS 与 HSCST，每种算法在 L1 上独立运行 20 次，并输出 30、60、120、300 秒的 anytime 检查点。标准终止条件下的五算法完整比较使用 `run_experiment.py`。
 
 绘图脚本通过命令行接收实验 CSV 路径，不包含本机绝对路径。例如：
 

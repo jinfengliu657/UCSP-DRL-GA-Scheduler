@@ -16,3 +16,5 @@ from .constraint_solver import generate_feasible_solution
 from .rl_controller import RLController
 from .zhu_replica import ZhuReplicaAlgorithm
 from .ifts import IFTS
+from .cuckoo_search import CuckooSearchAlgorithm
+from .sun_wu_tpts import SunWuTabuSearch
