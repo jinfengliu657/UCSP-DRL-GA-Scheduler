@@ -1,0 +1,87 @@
+# 约束条件定义
+
+# 硬约束 (必须满足)
+hard_constraints:
+  - name: fixed_time
+    description: 固定时间约束
+    weight: -1000
+    enabled: true
+
+  - name: teacher_conflict
+    description: 教师时间冲突
+    weight: -1000
+    enabled: true
+
+  - name: class_conflict
+    description: 班级时间冲突
+    weight: -1000
+    enabled: true
+
+  - name: classroom_conflict
+    description: 教室时间冲突
+    weight: -1000
+    enabled: true
+
+  - name: special_room
+    description: 特殊教室约束
+    weight: -1000
+    enabled: true
+
+  - name: capacity
+    description: 教室容量约束
+    weight: -1000
+    enabled: true
+
+  - name: combined_class
+    description: 合班约束
+    weight: -1000
+    enabled: true
+
+  - name: total_hours
+    description: 总学时约束
+    weight: -1000
+    enabled: true
+
+# 软约束 (优化目标)
+soft_constraints:
+  - name: course_distribution
+    description: 课程分布均匀
+    weight: 0.4
+    enabled: true
+    params:
+      same_day_interval: 2  # 同一门课间隔天数
+      prefer_same_room: true
+
+  - name: classroom_utilization
+    description: 教室利用率
+    weight: 0.3
+    enabled: true
+    params:
+      min_ratio: 0.4
+      max_ratio: 0.6
+      optimal_ratio: 0.5
+
+  - name: classroom_distance
+    description: 教室距离
+    weight: 0.3
+    enabled: true
+    params:
+      same_building_bonus: 10
+      different_building_penalty: -5
+
+# 时间槽定义
+time_slots:
+  days: [周一, 周二, 周三, 周四, 周五]
+  periods: [1, 2, 3, 4, 5, 6]
+  total_slots: 30
+
+# 教室类型
+classroom_types:
+  - type: general
+    description: 普通教室
+
+  - type: major
+    description: 专业教室
+
+  - type: lab
+    description: 实验室

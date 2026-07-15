@@ -1,0 +1,39 @@
+# DRL-GA-Scheduler 主配置文件
+
+# 数据库配置
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: ""  # 优先通过 DB_PASSWORD 环境变量提供，不要提交真实密码
+  database: test3
+
+# 遗传算法配置
+ga:
+  max_generations: 1000
+  tabu_search_ratio: 0.2  # 对前20%应用禁忌搜索
+  use_tabu_search: true
+
+# 深度学习配置
+dl_model_path: models/parameter_tuner.pth
+training_data: data/experiment_data.json
+dl_epochs: 100
+dl_batch_size: 32
+
+# 适应度权重
+fitness_weights:
+  w1: 0.4  # 课程分布均匀
+  w2: 0.3  # 教室利用率
+  w3: 0.3  # 教室距离
+
+# 输出配置
+output:
+  dir: output
+  save_excel: true
+  save_json: true
+  save_visualizations: true
+
+# 日志配置
+logging:
+  level: INFO
+  dir: logs
